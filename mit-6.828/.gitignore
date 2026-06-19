@@ -1,0 +1,24 @@
+# Generated build config (Docker grader writes this)
+lab/conf/env.mk
+
+# JOS build artifacts
+lab/obj/
+lab/jos.in
+lab/jos.log
+lab/jos.out
+lab/jos.out.*
+lab/jos.cmd
+lab/wget.log
+lab/qemu.pcap
+lab/qemu.pcap.*
+lab/qemu.out
+lab/qemu.log
+lab/gradelib.pyc
+lab/lab?-handin.tar.gz
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

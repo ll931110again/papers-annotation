@@ -1,0 +1,49 @@
+OBJDIRS += user
+
+USERLIBS = jos
+USERLIBS += lwip
+
+$(OBJDIR)/user/%.o: user/%.c $(OBJDIR)/.vars.USER_CFLAGS
+	@echo + cc[USER] $<
+	@mkdir -p $(@D)
+	$(V)$(CC) -nostdinc $(USER_CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/user/%: $(OBJDIR)/user/%.o $(OBJDIR)/lib/entry.o $(USERLIBS:%=$(OBJDIR)/lib/lib%.a) user/user.ld
+	@echo + ld $@
+	$(V)$(LD) -o $@.debug $(ULDFLAGS) $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $@.o -L$(OBJDIR)/lib $(USERLIBS:%=-l%) $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@.debug > $@.asm
+	$(V)$(NM) -n $@.debug > $@.sym
+	$(V)$(OBJCOPY) -R .stab -R .stabstr --add-gnu-debuglink=$(basename $@.debug) $@.debug $@
+
+$(OBJDIR)/user/exectest: USERLIBS := exec jos lwip
+$(OBJDIR)/user/exectest: $(OBJDIR)/user/exectest.o $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libexec.a $(OBJDIR)/lib/libjos.a $(OBJDIR)/lib/liblwip.a user/user.ld
+	@echo + ld $@
+	$(V)$(LD) -o $@.debug $(ULDFLAGS) $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $(OBJDIR)/user/exectest.o -L$(OBJDIR)/lib -lexec -ljos -llwip $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@.debug > $@.asm
+	$(V)$(NM) -n $@.debug > $@.sym
+	$(V)$(OBJCOPY) -R .stab -R .stabstr --add-gnu-debuglink=$(basename $@.debug) $@.debug $@
+
+$(OBJDIR)/user/pingpongs: USERLIBS := sfork jos lwip
+$(OBJDIR)/user/pingpongs: $(OBJDIR)/user/pingpongs.o $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libsfork.a $(OBJDIR)/lib/libjos.a $(OBJDIR)/lib/liblwip.a user/user.ld
+	@echo + ld $@
+	$(V)$(LD) -o $@.debug $(ULDFLAGS) $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $(OBJDIR)/user/pingpongs.o -L$(OBJDIR)/lib -lsfork -ljos -llwip $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@.debug > $@.asm
+	$(V)$(NM) -n $@.debug > $@.sym
+	$(V)$(OBJCOPY) -R .stab -R .stabstr --add-gnu-debuglink=$(basename $@.debug) $@.debug $@
+
+$(OBJDIR)/user/pingpongsfork: USERLIBS := sfork jos lwip
+$(OBJDIR)/user/pingpongsfork: $(OBJDIR)/user/pingpongsfork.o $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libsfork.a $(OBJDIR)/lib/libjos.a $(OBJDIR)/lib/liblwip.a user/user.ld
+	@echo + ld $@
+	$(V)$(LD) -o $@.debug $(ULDFLAGS) $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $(OBJDIR)/user/pingpongsfork.o -L$(OBJDIR)/lib -lsfork -ljos -llwip $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@.debug > $@.asm
+	$(V)$(NM) -n $@.debug > $@.sym
+	$(V)$(OBJCOPY) -R .stab -R .stabstr --add-gnu-debuglink=$(basename $@.debug) $@.debug $@
+
+$(OBJDIR)/user/forktree: USERLIBS := sfork jos lwip
+$(OBJDIR)/user/forktree: $(OBJDIR)/user/forktree.o $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libsfork.a $(OBJDIR)/lib/libjos.a $(OBJDIR)/lib/liblwip.a user/user.ld
+	@echo + ld $@
+	$(V)$(LD) -o $@.debug $(ULDFLAGS) $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $(OBJDIR)/user/forktree.o -L$(OBJDIR)/lib -lsfork -ljos -llwip $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@.debug > $@.asm
+	$(V)$(NM) -n $@.debug > $@.sym
+	$(V)$(OBJCOPY) -R .stab -R .stabstr --add-gnu-debuglink=$(basename $@.debug) $@.debug $@
+

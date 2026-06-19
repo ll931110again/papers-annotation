@@ -1,0 +1,27 @@
+# Run JOS lab builds/grades in x86_64 Linux (needed for STABS debug info).
+# Usage: make -f Makefile.docker grade-lab1
+
+IMAGE := ubuntu:18.04
+LABDIR := $(abspath lab)
+DOCKER_RUN := docker run --platform linux/amd64 --rm -v "$(LABDIR):/lab" -w /lab $(IMAGE)
+
+define DOCKER_SETUP
+apt-get update -qq && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gcc-multilib make binutils >/dev/null && \
+printf "GCCPREFIX=\nQEMU=qemu-system-i386\nCFLAGS += -std=gnu99 -fno-pic -no-pie\n" > conf/env.mk
+endef
+
+.PHONY: build-linux grade-lab1 grade-lab2 grade-lab3 grade-lab4 grade-lab5
+
+# Build kernel with Linux gcc (emits STABS). Grade on the host with native QEMU.
+build-linux:
+	$(DOCKER_RUN) bash -c '$(DOCKER_SETUP) && make clean && make'
+
+grade-lab1: build-linux
+	python3 scripts/grade_lab1.py --no-build
+
+grade-lab5: build-linux
+	python3 scripts/grade_lab5.py --no-build
+
+grade-lab5-full:
+	python3 scripts/grade_lab5.py
