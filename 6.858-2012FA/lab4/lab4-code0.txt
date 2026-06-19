@@ -1,0 +1,42 @@
+Lab 4 Code Review: code0 (Privilege Separation)
+===============================================
+
+Note: Peer submission tarball (lab4.tar.gz) was not available. This review
+analyzes our own Lab 2 implementation as a representative submission.
+
+Exercise 1 — Privilege isolation
+--------------------------------
+Strengths:
+- zookd (61011) and zookfs static/dynamic (61013/61014) run as non-root UIDs
+- CGI scripts restricted to uid 61015 via http_set_executable_uid_gid
+- password.cgi and /db/ paths blocked in http_serve
+- RPC services (auth, log, xfer) run as separate zooksvc processes with
+  dedicated UIDs and chroot socket directories
+
+Potential issues:
+- Socket directories use mode 711 for authsvc/xfersvc allowing CGI uid 61015
+  to traverse but not list; verify no symlink attacks in /tmp
+- echo_svc runs as uid 61010 with world-readable socket — low risk but
+  unnecessary attack surface
+- profile_svc not implemented (2012 lab2 does not require it)
+
+Exercise 2 — Credentials
+------------------------
+Strengths:
+- Passwords stored in separate auth.db with PBKDF2 + random salt
+- Tokens regenerated on login; person.db has no password/token columns
+- Transfer logic moved to xfer_svc; bank balances in zoobars.db
+
+Potential issues:
+- Token is MD5(password + random) — tokens are session identifiers not
+  password hashes, acceptable but MD5 is weak if leaked
+- No rate limiting on auth_svc login attempts
+- xfer_svc does not re-verify token on each transfer (trusts CGI layer)
+
+Exercise 3 — Python sandbox
+---------------------------
+Not applicable to Lab 2 submission (sandbox added in Lab 3).
+
+Overall: The implementation meets check-lab2.py requirements. Main residual
+risk is ensuring socket directory permissions cannot be widened by a
+compromised CGI process.

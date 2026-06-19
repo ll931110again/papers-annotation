@@ -1,0 +1,55 @@
+# Native x86_64 Ubuntu 14.04 for MIT 6.858 grading.
+# Runs 32-bit (-m32) lab binaries on real x86_64 userspace (not linux/386 QEMU).
+FROM --platform=linux/amd64 ubuntu:14.04
+
+RUN dpkg --add-architecture i386 \
+ && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    gcc \
+    gcc-multilib \
+    g++-multilib \
+    libc6-dev-i386 \
+    libc6:i386 \
+    lib32z1 \
+    lib32gcc1 \
+    make \
+    libssl-dev \
+    execstack \
+    strace \
+    curl \
+    wget \
+    python \
+    python-sqlalchemy \
+    python-flask \
+    python-lxml \
+    slimit \
+    libsqlite3-dev \
+    gdb \
+    git \
+    firefox \
+    xvfb \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY libs/libcrypto.so.0.9.8 libs/libssl.so.0.9.8 /usr/lib/
+RUN mkdir -p /usr/lib32 && \
+    cp /usr/lib/libcrypto.so.0.9.8 /usr/lib/libssl.so.0.9.8 /usr/lib32/ && \
+    ln -sf libcrypto.so.0.9.8 /usr/lib32/libcrypto.so && \
+    ln -sf libssl.so.0.9.8 /usr/lib32/libssl.so
+
+# gcc -m32 cannot find opensslconf.h without this symlink on Ubuntu 14.04.
+RUN ln -sf /usr/include/x86_64-linux-gnu/openssl/opensslconf.h /usr/include/openssl/opensslconf.h
+
+RUN useradd -m -s /bin/bash httpd && echo "httpd:6858" | chpasswd
+
+# Lab services use dedicated UIDs; Python CGI calls getpwuid() inside the chroot.
+RUN for uid in 61009 61010 61011 61012 61013 61014 61015 61016 61017 61018; do \
+      echo "u$uid:x:$uid:1000::/:/bin/false" >> /etc/passwd; \
+    done
+
+WORKDIR /home/httpd/lab
+COPY lab/ /home/httpd/lab/
+RUN chown -R httpd:httpd /home/httpd
+
+USER httpd
+ENV HOME=/home/httpd
+CMD ["/bin/bash"]

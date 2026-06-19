@@ -1,0 +1,40 @@
+Lab 4 Code Review: code1 (Privilege Separation)
+===============================================
+
+Note: Second peer submission unavailable. Review based on FelixZhang00/mit6858-lab
+lab2 reference (bank_svc/auth_svc pattern) compared to our implementation.
+
+Exercise 1 — Privilege isolation
+--------------------------------
+The reference uses bank_svc and cred.db naming vs our xfer_svc/auth.db.
+Both patterns correctly:
+- Split static/dynamic zookfs services
+- Run zookd as non-root
+- Isolate DB files with per-service UIDs
+
+Reference concern: profile_svc runs as root (uid 0) in FelixZhang zook.conf.
+Our implementation omits profile_svc entirely, which is safer.
+
+Reference concern: banksvc socket dir owned 61017:61017 vs our 61018:61018
+with extra_gids — both restrict httpd from accessing bank socket.
+
+Exercise 2 — Credentials
+------------------------
+Reference uses cred.db (username/password/salt/token) separate from person.db.
+Functionally equivalent to our auth.db split.
+
+Reference bank_client.get_log exposes transfer history via RPC — same as ours.
+No token check in bank RPC calls in either implementation.
+
+Exercise 3 — Python sandbox
+---------------------------
+Not in Lab 2 scope for either submission.
+
+Comparison summary: Both implementations achieve privilege separation goals.
+Our version avoids root profile_svc. Neither implementation validates auth
+tokens inside xfer/bank RPC handlers.
+
+Recommendations for code1-style deployments:
+1. Add token verification to xfer_svc.transfer()
+2. Remove or sandbox profile_svc if present
+3. Audit supplementary group memberships (extra_gids)

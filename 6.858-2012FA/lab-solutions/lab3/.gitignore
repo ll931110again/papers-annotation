@@ -1,0 +1,12 @@
+/*.o
+/*.log
+/zookd
+/zookd-exstack
+/zookd-ssp
+/zookfs
+/zookfs-exstack
+/zookfs-ssp
+/zookld
+/shellcode.bin
+/zooksvc
+/run-shellcode

@@ -1,0 +1,15 @@
+services:
+  lab:
+    build:
+      context: .
+      dockerfile: Dockerfile.native
+    platform: linux/amd64
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./lab:/home/httpd/lab
+      - .:/home/httpd.lab
+    working_dir: /home/httpd/lab
+    stdin_open: true
+    tty: true

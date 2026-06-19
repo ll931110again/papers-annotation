@@ -1,0 +1,50 @@
+# Lima VM: full x86_64 Linux for MIT 6.858 grading (Firefox, PyPy sandbox).
+# On Apple Silicon this runs under QEMU system emulation — slower than Docker amd64
+# but closer to a real lab machine than linux/386 user emulation.
+#
+# Setup:
+#   brew install lima
+#   limactl start --name=mit6858 native/lima.yaml
+#   ./native/sync-to-vm.sh
+#   limactl shell mit6858 -- sudo /home/httpd.lab/native/provision.sh
+#   limactl shell mit6858 -- sudo /home/httpd.lab/grade-vm.sh all
+
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+
+arch: "x86_64"
+
+cpus: 4
+memory: "8GiB"
+disk: "40GiB"
+
+mounts:
+  - location: ".."
+    writable: true
+    mountPoint: /home/httpd.lab
+
+portForwards:
+  - guestPort: 8080
+    hostPort: 8080
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux
+      apt-get update
+      DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        gcc gcc-multilib g++-multilib make libssl-dev execstack strace \
+        curl wget python3 python3-flask python3-sqlalchemy python3-lxml \
+        slimit libsqlite3-dev gdb git firefox xvfb netcat-openbsd \
+        libc6-dev-i386
+      if ! id httpd >/dev/null 2>&1; then
+        useradd -m -s /bin/bash httpd
+        echo "httpd:6858" | chpasswd
+      fi
+      mkdir -p /home/httpd/lab
+      ln -sfn /home/httpd.lab/lab /home/httpd/lab
+      cp -f /home/httpd.lab/libs/libcrypto.so.0.9.8 /usr/lib/ 2>/dev/null || true
+      cp -f /home/httpd.lab/libs/libssl.so.0.9.8 /usr/lib/ 2>/dev/null || true
+      chown -R httpd:httpd /home/httpd

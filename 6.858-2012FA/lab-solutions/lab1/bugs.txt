@@ -1,0 +1,94 @@
+#
+# [file:#lines]
+# desc
+#
+
+[zookd.c:104]
+The reqpath buffer in process_client can overflow via url_decode in
+http_request_line. A long URL path in the HTTP request line is decoded
+into reqpath[2048] without bounds checking.
+
+    char reqpath[2048];
+    ...
+    if ((errmsg = http_request_line(fd, reqpath, env, &env_len)))
+
+    url_decode(reqpath, sp1);   /* http.c */
+
+Canaries: stack canaries would protect the saved return address on the
+stack frame of process_client, since the overflow clobbers stack locals
+and the return address.
+
+[zookfs.c:37]
+The envp buffer on the stack can overflow when zookd forwards a large
+environment block via sendfd. recvfd reads up to sizeof(envp) bytes but
+the sender may provide env strings that deserialize into many setenv
+calls; combined with long REQUEST_URI values packed into env, the static
+env in zookd can also be overflowed via sprintf in http_request_line.
+
+    char envp[8192];
+    ...
+    if ((recvfd(fd, envp, sizeof(envp), &sockfd) <= 0) || sockfd < 0)
+
+Canaries: envp is on the stack of the zookfs main loop; overflowing it
+can overwrite the return address. Stack canaries would help.
+
+[http.c:241]
+http_serve uses strcat to append the request URI to pn[1024] without
+checking the combined length, overflowing pn and adjacent stack data
+including the function pointer handler.
+
+    char pn[1024];
+    ...
+    getcwd(pn, sizeof(pn));
+    ...
+    strcat(pn, name);
+
+Canaries: would not protect the function pointer handler stored between
+pn and the saved frame pointer, since the overflow is sequential within
+the stack frame before the canary check on return.
+
+[http.c:159]
+http_request_headers decodes each header value into value[512] using
+url_decode without bounds checking. A long header line overflows value
+and adjacent stack variables.
+
+    char value[512];
+    ...
+    url_decode(value, sp);
+
+Canaries: would protect saved return address on the stack frame of
+http_request_headers if the overflow is large enough to reach it.
+
+[http.c:369]
+http_serve_executable accumulates CGI response headers into headers[4096]
+but uses the return value of snprintf (which may exceed headerslen) to
+advance pheaders, allowing writes past the end of the headers buffer.
+
+    ret = snprintf(pheaders, headerslen, "%s\r\n", buf);
+    pheaders += ret;
+    headerslen -= ret;
+
+Canaries: this overflow can reach saved registers and the return address;
+stack canaries would detect it when the function returns.
+
+[http.c:93]
+http_request_line packs multiple attacker-controlled strings into env[8192]
+using sprintf without checking remaining space, overflowing env and the
+static env_len in zookd.
+
+    envp += sprintf(envp, "REQUEST_URI=%s", reqpath) + 1;
+
+Canaries: env is static in zookd, not stack; canaries do not apply.
+
+[http.c:302]
+dir_join copies dirname and filename into dst using strcpy/strcat without
+length checks; name[1024] in http_serve_directory can overflow.
+
+    void dir_join(char *dst, const char *dirname, const char *filename) {
+        strcpy(dst, dirname);
+        ...
+        strcat(dst, filename);
+    }
+
+Canaries: stack buffer overflow in http_serve_directory; canaries would
+help protect the return address.
